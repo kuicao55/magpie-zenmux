@@ -1,6 +1,6 @@
 {
   "name": "magpie-zenmux",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "ZenMux provider plugin for Magpie and OpenCode: Builder Plan (Subscription) and Pay-As-You-Go support, 5-hour/7-day Flow windows, reset counts, PAYG balance, per-plan model filtering, and native multi-protocol routing",
   "type": "module",
   "main": "./index.mjs",

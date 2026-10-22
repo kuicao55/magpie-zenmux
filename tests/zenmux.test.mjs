@@ -104,6 +104,37 @@ test("a higher effective flow rate is a value note, not an error", () => {
   assert.match(u.windows[0].display, /value \$0\.0516\/flow \(×1\.57 base\)/)
 })
 
+test("an image-only model is served so magpie can draw with it", () => {
+  const flare = I.servedModelFromV1({
+    id: "openai/gpt-image-2.5-flare",
+    display_name: "OpenAI: GPT-Image-2.5-Flare",
+    input_modalities: ["text", "image"],
+    output_modalities: ["image"],
+    context_length: 10000,
+    capabilities: { reasoning: false },
+    pricings: { prompt: [{ value: 5, unit: "perMTokens", currency: "USD" }] },
+  })
+  assert.ok(flare)
+  assert.equal(flare.id, "openai/gpt-image-2.5-flare")
+  assert.equal(flare.capabilities.output.image, true)
+  assert.equal(flare.capabilities.output.text, false)
+  assert.equal(flare.api.url, "https://zenmux.ai/api/v1")
+
+  const chat = I.servedModelFromV1({
+    id: "openai/gpt-6",
+    output_modalities: ["text"],
+    input_modalities: ["text"],
+  })
+  assert.ok(chat)
+
+  const speech = I.servedModelFromV1({
+    id: "qwen/qwen-audio-3.0-tts-plus",
+    output_modalities: ["speech"],
+    input_modalities: ["text"],
+  })
+  assert.equal(speech, null)
+})
+
 test("protocol routing and 403 access_denied vs safety_check_failed", async () => {
   assert.deepEqual(I.protocolOf("anthropic/claude-sonnet-4.5", "chat.completions,messages,responses"), {
     npm: "@ai-sdk/anthropic",

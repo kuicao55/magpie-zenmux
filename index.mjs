@@ -413,7 +413,12 @@ function servedModelFromV1(item, baseModel) {
   const id = text(item?.id)
   if (!id) return null
   const outModalities = Array.isArray(item?.output_modalities) ? item.output_modalities : ["text"]
-  if (!outModalities.includes("text")) return null
+  // An image-only model draws: Magpie needs it in the list to route
+  // /v1/images/generations to it. Dropping it left every gpt-image and
+  // qwen-image model out of the provider, so no image group could use one.
+  // A model that gives neither text nor an image (speech, embeddings) is
+  // still not a chat or drawing model.
+  if (!outModalities.includes("text") && !outModalities.includes("image")) return null
   const proto = protocolOf(id, "")
   if (!proto) return null
 
