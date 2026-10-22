@@ -75,6 +75,35 @@ test("key classification and subscription/payg usage mapping", () => {
   })
 })
 
+test("a higher effective flow rate is a value note, not an error", () => {
+  const u = I.formatSubscriptionUsage({
+    plan: { tier: "pro", expires_at: "2026-11-06T05:35:47.000Z" },
+    account_status: "healthy",
+    base_usd_per_flow: 0.03283,
+    effective_usd_per_flow: 0.0516,
+    quota_5_hour: {
+      usage_percentage: 0.13,
+      resets_at: "2026-10-22T04:58:22.000Z",
+      remaining_resets: 4,
+      used_flows: 6.5,
+      max_flows: 50,
+      used_value_usd: 0.34,
+      max_value_usd: 2.58,
+    },
+    quota_7_day: {
+      usage_percentage: 0.07,
+      resets_at: "2026-10-27T14:57:41.000Z",
+      used_flows: 27,
+      max_flows: 386,
+      used_value_usd: 1.39,
+      max_value_usd: 19.92,
+    },
+  })
+
+  assert.equal(u.error, undefined)
+  assert.match(u.windows[0].display, /value \$0\.0516\/flow \(×1\.57 base\)/)
+})
+
 test("protocol routing and 403 access_denied vs safety_check_failed", async () => {
   assert.deepEqual(I.protocolOf("anthropic/claude-sonnet-4.5", "chat.completions,messages,responses"), {
     npm: "@ai-sdk/anthropic",

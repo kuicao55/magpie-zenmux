@@ -1,6 +1,6 @@
 {
   "name": "magpie-zenmux",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "ZenMux provider plugin for Magpie and OpenCode: Builder Plan (Subscription) and Pay-As-You-Go support, 5-hour/7-day Flow windows, reset counts, PAYG balance, per-plan model filtering, and native multi-protocol routing",
   "type": "module",
   "main": "./index.mjs",
@@ -29,17 +29,17 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NieiR/magpie-zenmux.git"
+    "url": "git+https://github.com/kuicao55/magpie-zenmux.git"
   },
-  "homepage": "https://github.com/NieiR/magpie-zenmux#readme",
+  "homepage": "https://github.com/kuicao55/magpie-zenmux#readme",
   "bugs": {
-    "url": "https://github.com/NieiR/magpie-zenmux/issues"
+    "url": "https://github.com/kuicao55/magpie-zenmux/issues"
   },
   "engines": {
     "node": "^22.19.0 || >=24.0.0"
   },
   "magpie": {
-    "icon": "https://raw.githubusercontent.com/NieiR/magpie-zenmux/main/assets/icon.svg"
+    "icon": "https://raw.githubusercontent.com/kuicao55/magpie-zenmux/main/assets/icon.svg"
   },
   "scripts": {
     "test": "node --test tests/*.test.mjs",

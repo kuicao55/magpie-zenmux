@@ -228,8 +228,12 @@ function formatSubscriptionUsage(detail) {
   const effRate = num(detail?.effective_usd_per_flow)
   if (["abusive", "suspended", "banned"].includes(st)) {
     out.error = `ZenMux account status is ${st}.`
-  } else if (baseRate > 0 && effRate > baseRate * 1.001) {
-    out.error = `Flow rate penalty active: $${effRate}/flow (base $${baseRate}/flow).`
+  } else if (baseRate > 0 && effRate > baseRate * 1.001 && windows.length) {
+    // A rate above the base is more value per flow, not a fault: say so on
+    // the card, but leave `error` empty. Magpie skips an account whose usage
+    // read carries an error when routing, so a warning here would keep the
+    // account invisible to quota-aware routing.
+    windows[0].display += ` · value $${effRate}/flow (×${(effRate / baseRate).toFixed(2)} base)`
   }
   return out
 }

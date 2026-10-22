@@ -1,6 +1,6 @@
 # ZenMux — Magpie 供应商插件
 
-版本 **0.1.0**，包名 **`magpie-zenmux`**。为 [Magpie](https://usemagpie.ai) 与 [OpenCode](https://opencode.ai) 提供 **ZenMux**（[zenmux.ai](https://zenmux.ai)）统一供应商接入，同时支持 **Builder Plan（订阅制）** 与 **Pay As You Go（按量付费）** 两种 API Key，并在 Magpie 中原生展示 **5 小时 / 7 天滚动 Flow 额度窗口**、**提前重置次数** 与 **按量账户余额**。
+版本 **0.1.1**，包名 **`magpie-zenmux`**。为 [Magpie](https://usemagpie.ai) 与 [OpenCode](https://opencode.ai) 提供 **ZenMux**（[zenmux.ai](https://zenmux.ai)）统一供应商接入，同时支持 **Builder Plan（订阅制）** 与 **Pay As You Go（按量付费）** 两种 API Key，并在 Magpie 中原生展示 **5 小时 / 7 天滚动 Flow 额度窗口**、**提前重置次数** 与 **按量账户余额**。
 
 插件内置 `assets/icon.svg` 离线图标（同时在 `package.json` 提供 HTTPS 图标地址），零第三方运行时依赖，无需 `npm install` 或构建。
 
@@ -13,7 +13,7 @@
 ### 方式一：直接通过 GitHub 安装（推荐）
 
 ```sh
-magpie plugin add github:NieiR/magpie-zenmux
+magpie plugin add github:kuicao55/magpie-zenmux
 ```
 
 或在 Magpie 的 **插件（Plugins） → 发现（Discover） → 非官方插件 · GitHub** 中找到 **magpie-zenmux** 点击安装。
@@ -21,7 +21,7 @@ magpie plugin add github:NieiR/magpie-zenmux
 ### 方式二：克隆到本地目录安装
 
 ```sh
-git clone https://github.com/NieiR/magpie-zenmux.git
+git clone https://github.com/kuicao55/magpie-zenmux.git
 magpie plugin add ./magpie-zenmux
 ```
 
@@ -75,7 +75,7 @@ zenmux · Builder Starter · until Oct 27 · API key …dff9  subscription  5h 0
 |---|---|
 | **订阅 5 小时 / 7 天滚动窗口** | 调 `/api/v1/management/subscription/detail` 展示已用百分比、已用/最大 Flows、折算美元价值及窗口自然重置倒计时 |
 | **5 小时窗口提前重置次数** | 映射 `quota_5_hour.remaining_resets` 至 Magpie 的 `resets.fiveHour`，显示当月剩余手动/自动重置机会及套餐到期时间 |
-| **Flow 汇率惩罚与异常状态提醒** | 当 `account_status` 异常或 `effective_usd_per_flow > base_usd_per_flow` 时在额度卡片直接显示告警 |
+| **Flow 汇率与异常状态显示** | `account_status` 异常时告警；`effective_usd_per_flow` 高于基准时在额度卡片显示折算价值（高于基准是每个 Flow 价值更高，不是惩罚，不写入 `error`） |
 | **按量付费（PAYG）余额查询** | 调 `/api/v1/management/payg/balance` 展示账户当前可用美元总余额（`$total_credits left`） |
 | **按套餐等级自动过滤模型** | 订阅 Key（`sk-ss-v1-…`）自动结合当前套餐等级（`starter` / `pro` / `max` / `ultra`）与公开套餐清单过滤可用模型；按量 Key（`sk-ai-v1-…`）开放全量模型 |
 | **原生多协议分流** | `anthropic/*` 走 Anthropic Messages（`/api/anthropic/v1/messages`），`openai/*` 走 OpenAI Responses（`/api/v1/responses`），其余对话模型走 Chat Completions（`/api/v1/chat/completions`） |
