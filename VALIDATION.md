@@ -26,3 +26,32 @@ Date: 2026-10-17. Windows 11 amd64; Magpie `0.1.1278`; Bun `1.3.14`.
     ```
   - **Live inference**: `magpie provider test zenmux inclusionai/ling-3.1-flash` passed (`✓ chat · inclusionai/ling-3.1-flash`), and direct Anthropic Messages (`POST /api/anthropic/v1/messages` with `metadata`) and OpenAI Chat Completions (`POST /api/v1/chat/completions`) both answered `200 OK`.
 - No API keys or account credentials are stored in this repository.
+
+---
+
+# Validation — 0.1.3
+
+Date: 2026-11-11. macOS 15 (Darwin 25.6.0); Node `v26.3.1`; Bun `1.3.14`; Magpie `0.1.1278`.
+
+## What changed
+
+ZenMux rotated every API key format during its upgrade window of 2026-10-22 → 2026-11-10 and disabled the legacy keys on 2026-11-10 00:00 UTC. The live ZenMux API answers a legacy key with:
+
+```text
+403 access_denied — The API key upgrade window (October 22–November 10, 2026) has ended.
+Legacy keys have been disabled since November 10, 2026, at 00:00 UTC.
+Please create a new API key of the same type at https://zenmux.ai/platform …
+```
+
+The new formats (taken from the upstream plugin, which tracks the platform) are `sk-subs-…` for Builder Plan, `sk-payg-…` for Pay As You Go and `sk-mgmt-…` for Management. 0.1.3 accepts the new and the legacy spelling of each, so an account signed in before the upgrade keeps classifying the way it used to.
+
+## Contract and unit checks
+
+- `npm run check`: **✓ magpie-zenmux (0.1.3)** — single exported plugin function, `config`, `auth` (`provider: "zenmux"`, `methods`, `loader`, `usage`) and `provider.models` hooks, verified offline with no credentials.
+- `npm test`: **5 passed, 0 failed**.
+  - New unit coverage: `sk-subs-` → `subscription`, `sk-payg-` → `payg`, `sk-mgmt-` → `management`, and the legacy `sk-ss-v1-` / `sk-ai-v1-` / `sk-mg-v1-` spellings still classify as before.
+  - The 0.1.2 coverage (image-only models stay in the catalog, a higher `effective_usd_per_flow` reads as a value note and not an error, `403 access_denied` vs `403 safety_check_failed`) still passes.
+
+## Not verified here
+
+- No new-format key was available in this environment, so the new prefixes are verified against the upstream plugin and the platform's own error message, not against a live request.

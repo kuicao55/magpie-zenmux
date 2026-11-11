@@ -75,6 +75,21 @@ test("key classification and subscription/payg usage mapping", () => {
   })
 })
 
+test("the rotated ZenMux key formats classify like the legacy ones", () => {
+  // ZenMux replaced every key format during its 2026-10-22 → 2026-11-10
+  // upgrade window and disabled the old keys on 2026-11-10.
+  assert.equal(I.modeOf({ key: "sk-subs-abc" }), "subscription")
+  assert.equal(I.modeOf({ key: "sk-payg-def" }), "payg")
+  assert.equal(I.isManagementKey("sk-mgmt-123"), true)
+  assert.equal(I.validateManagementKey("sk-mgmt-123"), undefined)
+  assert.notEqual(I.validateManagementKey("sk-subs-123"), undefined)
+
+  // The legacy spellings keep classifying the way they used to.
+  assert.equal(I.modeOf({ key: "sk-ss-v1-abc" }), "subscription")
+  assert.equal(I.modeOf({ key: "sk-ai-v1-def" }), "payg")
+  assert.equal(I.isManagementKey("sk-mg-v1-123"), true)
+})
+
 test("a higher effective flow rate is a value note, not an error", () => {
   const u = I.formatSubscriptionUsage({
     plan: { tier: "pro", expires_at: "2026-11-06T05:35:47.000Z" },

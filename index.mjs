@@ -40,20 +40,34 @@ const num = (v) => {
 
 // ---- Key classification & Management key resolution -------------------------
 
+// ZenMux rotated its key formats during the upgrade window of 2026-10-22 to
+// 2026-11-10 and disabled the legacy keys on 2026-11-10. A new key is
+// sk-subs-… (Builder Plan), sk-payg-… (Pay As You Go) or
+// sk-mgmt-… (Management). The legacy spellings stay accepted so a
+// key saved before the upgrade still classifies the way it used to.
+const SUBSCRIPTION_KEY_PREFIXES = ["sk-subs-", "sk-ss-v1-"]
+const PAYG_KEY_PREFIXES = ["sk-payg-", "sk-ai-v1-"]
+const MANAGEMENT_KEY_PREFIXES = ["sk-mgmt-", "sk-mg-v1-"]
+
 function keyOf(auth) {
   return text(auth?.key) || text(auth?.access)
 }
 
+function hasPrefix(key, prefixes) {
+  const k = text(key)
+  return prefixes.some((prefix) => k.startsWith(prefix))
+}
+
 function isSubscriptionKey(key) {
-  return text(key).startsWith("sk-ss-v1-")
+  return hasPrefix(key, SUBSCRIPTION_KEY_PREFIXES)
 }
 
 function isManagementKey(key) {
-  return text(key).startsWith("sk-mg-v1-")
+  return hasPrefix(key, MANAGEMENT_KEY_PREFIXES)
 }
 
 function isPaygKey(key) {
-  return text(key).startsWith("sk-ai-v1-")
+  return hasPrefix(key, PAYG_KEY_PREFIXES)
 }
 
 function modeOf(auth) {
@@ -101,7 +115,7 @@ function validateManagementKey(value) {
   const s = text(value)
   if (!s) return undefined
   if (!isManagementKey(s)) {
-    return "Management API key must start with sk-mg-v1- (create one at https://zenmux.ai/platform/management)"
+    return "Management API key must start with sk-mgmt- (or sk-mg-v1- for a key created before 2026-11-10); create one at https://zenmux.ai/platform/management"
   }
   return undefined
 }
@@ -532,8 +546,8 @@ export const ZenMuxAuthPlugin = async (input = {}) => {
   const managementKeyPrompt = {
     type: "password",
     key: "managementKey",
-    message: "ZenMux Management API key (sk-mg-v1-…, for 5h/7d quota & PAYG balance; optional if already saved)",
-    placeholder: "sk-mg-v1-… (from zenmux.ai/platform/management)",
+    message: "ZenMux Management API key (sk-mgmt-…, for 5h/7d quota & PAYG balance; optional if already saved)",
+    placeholder: "sk-mgmt-… (from zenmux.ai/platform/management)",
     validate: validateManagementKey,
   }
 
@@ -557,14 +571,14 @@ export const ZenMuxAuthPlugin = async (input = {}) => {
       methods: [
         {
           type: "api",
-          label: "ZenMux Subscription API key (sk-ss-v1-…)",
-          placeholder: "sk-ss-v1-…",
+          label: "ZenMux Subscription API key (sk-subs-…)",
+          placeholder: "sk-subs-…",
           prompts: [managementKeyPrompt],
         },
         {
           type: "api",
-          label: "ZenMux Pay-As-You-Go API key (sk-ai-v1-…)",
-          placeholder: "sk-ai-v1-…",
+          label: "ZenMux Pay-As-You-Go API key (sk-payg-…)",
+          placeholder: "sk-payg-…",
           prompts: [managementKeyPrompt],
         },
       ],
@@ -583,7 +597,7 @@ export const ZenMuxAuthPlugin = async (input = {}) => {
             }
             if (isManagementKey(activeKey)) {
               throw new Error(
-                "ZenMux: sk-mg-v1-… is a Management API key and cannot call models. Sign in with a Subscription key (sk-ss-v1-…) or Pay-As-You-Go key (sk-ai-v1-…).",
+                "ZenMux: a Management API key (sk-mgmt-…) cannot call models. Sign in with a Subscription key (sk-subs-…) or Pay-As-You-Go key (sk-payg-…).",
               )
             }
 
@@ -633,7 +647,7 @@ export const ZenMuxAuthPlugin = async (input = {}) => {
             plan: mode === "subscription" ? "Builder Plan" : "Pay As You Go",
             windows: [],
             error:
-              "Management API key (sk-mg-v1-…) not set. Sign in again and provide your Management API key to read 5h/7d Flow windows or PAYG balance.",
+              "Management API key (sk-mgmt-…) not set. Sign in again and provide your Management API key to read 5h/7d Flow windows or PAYG balance.",
             signIn: "kept",
           }
         }
@@ -665,7 +679,7 @@ export const ZenMuxAuthPlugin = async (input = {}) => {
           const out = formatPaygUsage(balRes.data)
           if (mode === "management") {
             out.error =
-              "Signed in with a Management API key (sk-mg-v1-…). Add a Subscription (sk-ss-v1-…) or PAYG (sk-ai-v1-…) key to call models."
+              "Signed in with a Management API key (sk-mgmt-…). Add a Subscription (sk-subs-…) or PAYG (sk-payg-…) key to call models."
           }
           return out
         } catch (e) {

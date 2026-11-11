@@ -1,6 +1,8 @@
 # ZenMux — Magpie 供应商插件
 
-版本 **0.1.2**，包名 **`magpie-zenmux`**。为 [Magpie](https://usemagpie.ai) 与 [OpenCode](https://opencode.ai) 提供 **ZenMux**（[zenmux.ai](https://zenmux.ai)）统一供应商接入，同时支持 **Builder Plan（订阅制）** 与 **Pay As You Go（按量付费）** 两种 API Key，并在 Magpie 中原生展示 **5 小时 / 7 天滚动 Flow 额度窗口**、**提前重置次数** 与 **按量账户余额**。
+版本 **0.1.3**，包名 **`magpie-zenmux`**。为 [Magpie](https://usemagpie.ai) 与 [OpenCode](https://opencode.ai) 提供 **ZenMux**（[zenmux.ai](https://zenmux.ai)）统一供应商接入，同时支持 **Builder Plan（订阅制）** 与 **Pay As You Go（按量付费）** 两种 API Key，并在 Magpie 中原生展示 **5 小时 / 7 天滚动 Flow 额度窗口**、**提前重置次数** 与 **按量账户余额**。
+
+> **ZenMux 密钥格式已升级（2026-10-22 → 2026-11-10）**：ZenMux 更换了全部密钥的前缀，旧密钥自 **2026-11-10 00:00 UTC** 起被停用（调用会返回 `403 access_denied`）。0.1.3 起插件同时识别新旧两套前缀，请在 [zenmux.ai/platform](https://zenmux.ai/platform) 重新创建密钥并重新登录。
 
 插件内置 `assets/icon.svg` 离线图标（同时在 `package.json` 提供 HTTPS 图标地址），零第三方运行时依赖，无需 `npm install` 或构建。
 
@@ -35,11 +37,11 @@ magpie plugin add ./magpie-zenmux
 
 ZenMux 平台将**模型推理密钥**与**账户管理密钥**做了权限隔离：
 
-| 密钥类型 | 前缀 | 创建位置 | 用途 |
-|---|---|---|---|
-| **订阅 API Key（Builder Plan）** | `sk-ss-v1-…` | [订阅管理页](https://zenmux.ai/platform/subscription) | 调用订阅套餐内的模型，消耗 5h / 7d 滚动 Flow 配额 |
-| **按量 API Key（Pay As You Go）** | `sk-ai-v1-…` | [按量付费页](https://zenmux.ai/platform/pay-as-you-go) | 按实际 Token 消耗扣减账户美元余额，可调用全量模型 |
-| **Management API Key** | `sk-mg-v1-…` | [Management 页](https://zenmux.ai/platform/management) | **仅用于查询**订阅 5h / 7d 配额、剩余重置次数和按量余额，不能调用模型 |
+| 密钥类型 | 新前缀 | 旧前缀（2026-11-10 起停用） | 创建位置 | 用途 |
+|---|---|---|---|---|
+| **订阅 API Key（Builder Plan）** | `sk-subs-…` | `sk-ss-v1-…` | [订阅管理页](https://zenmux.ai/platform/subscription) | 调用订阅套餐内的模型，消耗 5h / 7d 滚动 Flow 配额 |
+| **按量 API Key（Pay As You Go）** | `sk-payg-…` | `sk-ai-v1-…` | [按量付费页](https://zenmux.ai/platform/pay-as-you-go) | 按实际 Token 消耗扣减账户美元余额，可调用全量模型 |
+| **Management API Key** | `sk-mgmt-…` | `sk-mg-v1-…` | [Management 页](https://zenmux.ai/platform/management) | **仅用于查询**订阅 5h / 7d 配额、剩余重置次数和按量余额，不能调用模型 |
 
 ### 登录步骤
 
@@ -52,13 +54,13 @@ magpie plugin login zenmux
 或在 Magpie 界面打开 **供应商（Providers） → ZenMux → 登录 / 添加账号**：
 
 1. **选择密钥类型**：
-   - `ZenMux Subscription API key (sk-ss-v1-…)`（订阅制 Key）
-   - `ZenMux Pay-As-You-Go API key (sk-ai-v1-…)`（按量付费 Key）
-2. **输入 Management API Key（`sk-mg-v1-…`）**：
-   - 首次登录时填入在 `https://zenmux.ai/platform/management` 创建的 `sk-mg-v1-…` 密钥。
-   - **添加第二个 Key 时可直接回车留空**：插件会自动复用当前 Magpie 配置中已保存的 `sk-mg-v1-…` 管理密钥。
+   - `ZenMux Subscription API key (sk-subs-…)`（订阅制 Key）
+   - `ZenMux Pay-As-You-Go API key (sk-payg-…)`（按量付费 Key）
+2. **输入 Management API Key（`sk-mgmt-…`）**：
+   - 首次登录时填入在 `https://zenmux.ai/platform/management` 创建的 `sk-mgmt-…` 密钥。
+   - **添加第二个 Key 时可直接回车留空**：插件会自动复用当前 Magpie 配置中已保存的 `sk-mgmt-…` 管理密钥。
 3. **输入推理 API Key**：
-   - 填入对应的 `sk-ss-v1-…` 或 `sk-ai-v1-…` 密钥即可完成登录。
+   - 填入对应的 `sk-subs-…` 或 `sk-payg-…` 密钥即可完成登录。
 
 登录完成后，运行 `magpie quota zenmux` 即可查看实时配额与余额：
 
@@ -78,7 +80,7 @@ zenmux · Builder Starter · until Oct 27 · API key …dff9  subscription  5h 0
 | **Flow 汇率与异常状态显示** | `account_status` 异常时告警；`effective_usd_per_flow` 高于基准时在额度卡片显示折算价值（高于基准是每个 Flow 价值更高，不是惩罚，不写入 `error`） |
 | **纯图像模型保留** | `output_modalities` 只有 `image` 的模型（`gpt-image-*`、`qwen-image-*` 等）不再被过滤，Magpie 的生图路由可以选中它们；语音、Embedding 等非文本非图像模型仍会被过滤 |
 | **按量付费（PAYG）余额查询** | 调 `/api/v1/management/payg/balance` 展示账户当前可用美元总余额（`$total_credits left`） |
-| **按套餐等级自动过滤模型** | 订阅 Key（`sk-ss-v1-…`）自动结合当前套餐等级（`starter` / `pro` / `max` / `ultra`）与公开套餐清单过滤可用模型；按量 Key（`sk-ai-v1-…`）开放全量模型 |
+| **按套餐等级自动过滤模型** | 订阅 Key（`sk-subs-…`）自动结合当前套餐等级（`starter` / `pro` / `max` / `ultra`）与公开套餐清单过滤可用模型；按量 Key（`sk-payg-…`）开放全量模型 |
 | **原生多协议分流** | `anthropic/*` 走 Anthropic Messages（`/api/anthropic/v1/messages`），`openai/*` 走 OpenAI Responses（`/api/v1/responses`），其余对话模型走 Chat Completions（`/api/v1/chat/completions`） |
 | **原生联网搜索透传** | 开启 `searches: true`，Claude Code 与 Codex 的原生 `web_search` 请求直接透传至 ZenMux 上游 |
 | **精准 403 状态区分** | 区分 ZenMux 的 `403 access_denied`（Key 失效，标记账号需重登）与 `403 safety_check_failed`（内容安全拦截，保持账号在线） |
@@ -87,7 +89,7 @@ zenmux · Builder Starter · until Oct 27 · API key …dff9  subscription  5h 0
 
 ## 订阅与按量混用自动分流
 
-在 Magpie 中同时登录一个 **订阅 Key（`sk-ss-v1-…`）** 和一个 **按量 Key（`sk-ai-v1-…`）** 时，无需开启 ZenMux 网页端的 Extra Usage 即可获得更精细的本地网关路由：
+在 Magpie 中同时登录一个 **订阅 Key（`sk-subs-…`）** 和一个 **按量 Key（`sk-payg-…`）** 时，无需开启 ZenMux 网页端的 Extra Usage 即可获得更精细的本地网关路由：
 
 1. **套餐外模型零报错直达按量号**：
    - 例如 Starter 套餐不包含 `anthropic/claude-opus-4.5`、`openai/gpt-5.3-codex` 等 Max/Ultra 模型。
@@ -102,9 +104,10 @@ zenmux · Builder Starter · until Oct 27 · API key …dff9  subscription  5h 0
 | 现象 | 原因与处理方法 |
 |---|---|
 | 供应商显示为 `zenmux-plugin` 而不是 `zenmux` | 你之前添加过同名自定义供应商 `zenmux`。运行 `magpie provider rm zenmux` 即可让插件接管 `zenmux` |
-| 用量卡片提示 `Management API key (sk-mg-v1-…) not set` | 登录时未填管理密钥。前往 [ZenMux Management](https://zenmux.ai/platform/management) 创建 `sk-mg-v1-…`，重新运行 `magpie plugin login zenmux` 填入即可 |
-| 调用模型提示 `sk-mg-v1-… is a Management API key` | 把管理密钥填进了推理 API Key 输入框。管理密钥只能填在第一步提示中，API Key 输入框需填 `sk-ss-v1-…` 或 `sk-ai-v1-…` |
-| 订阅号里找不到某个模型（如 `claude-opus-4.5`） | 该模型不在你当前的订阅套餐（如 Starter）范围内。可升级套餐，或同时添加一个按量 Key（`sk-ai-v1-…`）由其承接 |
+| 用量卡片提示 `Management API key (sk-mgmt-…) not set` | 登录时未填管理密钥。前往 [ZenMux Management](https://zenmux.ai/platform/management) 创建 `sk-mgmt-…`，重新运行 `magpie plugin login zenmux` 填入即可 |
+| 调用模型提示 `sk-mgmt-… is a Management API key` | 把管理密钥填进了推理 API Key 输入框。管理密钥只能填在第一步提示中，API Key 输入框需填 `sk-subs-…` 或 `sk-payg-…` |
+| 调用模型返回 `403 access_denied`，并提示 `legacy ZenMux API key` / `API key upgrade` | 你的密钥是 2026-11-10 之前创建的旧格式，ZenMux 已停用。前往 [zenmux.ai/platform](https://zenmux.ai/platform) 重新创建密钥（订阅 `sk-subs-…`、按量 `sk-payg-…`、管理 `sk-mgmt-…`），再 `magpie plugin login zenmux` 重新登录 |
+| 订阅号里找不到某个模型（如 `claude-opus-4.5`） | 该模型不在你当前的订阅套餐（如 Starter）范围内。可升级套餐，或同时添加一个按量 Key（`sk-payg-…`）由其承接 |
 
 ---
 
