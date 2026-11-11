@@ -188,3 +188,43 @@ test("protocol routing and 403 access_denied vs safety_check_failed", async () =
     globalThis.fetch = realFetch
   }
 })
+
+test("the API key never leaves zenmux.ai", async () => {
+  assert.equal(I.assertZenMuxEndpoint("https://zenmux.ai/api/v1/chat/completions").hostname, "zenmux.ai")
+  assert.equal(
+    I.assertZenMuxEndpoint("https://zenmux.ai/api/v1/images/generations").pathname,
+    "/api/v1/images/generations",
+  )
+  assert.throws(
+    () => I.assertZenMuxEndpoint("https://example.com/api/v1/chat/completions"),
+    /unexpected endpoint/,
+  )
+  assert.throws(
+    () => I.assertZenMuxEndpoint("https://zenmux.ai.example.com/api/v1/chat/completions"),
+    /unexpected endpoint/,
+  )
+  assert.throws(
+    () => I.assertZenMuxEndpoint("https://user@zenmux.ai/api/v1/chat/completions"),
+    /unexpected endpoint/,
+  )
+  assert.throws(() => I.assertZenMuxEndpoint("https://zenmux.ai/elsewhere"), /refusing/)
+
+  // The loader refuses before the key is attached.
+  const realFetch = globalThis.fetch
+  try {
+    let seen = null
+    globalThis.fetch = async (url, init) => {
+      seen = { url: String(url), key: init.headers.get("authorization") || "" }
+      return new Response("{}", { status: 200 })
+    }
+    const hooks = await ZenMuxAuthPlugin({})
+    const loaded = await hooks.auth.loader(async () => ({ type: "api", key: "sk-subs-test" }))
+    await assert.rejects(
+      () => loaded.fetch("https://example.com/api/v1/chat/completions", { method: "POST", body: "{}" }),
+      /unexpected endpoint/,
+    )
+    assert.equal(seen, null)
+  } finally {
+    globalThis.fetch = realFetch
+  }
+})

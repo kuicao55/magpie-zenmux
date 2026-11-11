@@ -55,3 +55,27 @@ The new formats (taken from the upstream plugin, which tracks the platform) are 
 ## Not verified here
 
 - No new-format key was available in this environment, so the new prefixes are verified against the upstream plugin and the platform's own error message, not against a live request.
+
+---
+
+# Validation — 0.1.4
+
+Date: 2026-11-11. macOS 15 (Darwin 25.6.0); Node `v26.3.1`; Bun `1.3.14`; Magpie `0.1.1278`.
+
+## What changed
+
+Two hardening items taken from the upstream plugin's design, kept in this fork's own shape:
+
+- `auth.maxConcurrency: 2` — ZenMux's Builder Plan runs on a 10–15 RPM budget; two requests in flight per account keeps a burst inside it instead of bouncing off the rate limit. Magpie's own per-provider limit wins over the plugin's value.
+- `assertZenMuxEndpoint` — the request URL is checked before the key is attached: the origin has to be `https://zenmux.ai` (no userinfo) and the path has to sit under `/api/`. A key that reaches another host cannot be taken back.
+
+## Contract and unit checks
+
+- `npm run check`: **✓ magpie-zenmux (0.1.4)**.
+- `npm test`: **6 passed, 0 failed**.
+  - New unit coverage: `https://zenmux.ai/api/v1/chat/completions`, `/api/v1/images/generations` and `/api/anthropic/v1/messages` pass; `example.com`, `zenmux.ai.example.com`, a URL with userinfo and a path outside `/api/` are all refused; and the loader throws before `fetch` is reached, so no key is attached to a refused URL.
+  - The 0.1.3 coverage (key formats, image-only models, flow-rate note, 403 split) still passes.
+
+## Not verified here
+
+- No new-format key was available in this environment, so the live path was exercised only against the plugin's own routing, not against a real inference.

@@ -1,6 +1,6 @@
 # ZenMux — Magpie 供应商插件
 
-版本 **0.1.3**，包名 **`magpie-zenmux`**。为 [Magpie](https://usemagpie.ai) 与 [OpenCode](https://opencode.ai) 提供 **ZenMux**（[zenmux.ai](https://zenmux.ai)）统一供应商接入，同时支持 **Builder Plan（订阅制）** 与 **Pay As You Go（按量付费）** 两种 API Key，并在 Magpie 中原生展示 **5 小时 / 7 天滚动 Flow 额度窗口**、**提前重置次数** 与 **按量账户余额**。
+版本 **0.1.4**，包名 **`magpie-zenmux`**。为 [Magpie](https://usemagpie.ai) 与 [OpenCode](https://opencode.ai) 提供 **ZenMux**（[zenmux.ai](https://zenmux.ai)）统一供应商接入，同时支持 **Builder Plan（订阅制）** 与 **Pay As You Go（按量付费）** 两种 API Key，并在 Magpie 中原生展示 **5 小时 / 7 天滚动 Flow 额度窗口**、**提前重置次数** 与 **按量账户余额**。
 
 > **ZenMux 密钥格式已升级（2026-10-22 → 2026-11-10）**：ZenMux 更换了全部密钥的前缀，旧密钥自 **2026-11-10 00:00 UTC** 起被停用（调用会返回 `403 access_denied`）。0.1.3 起插件同时识别新旧两套前缀，请在 [zenmux.ai/platform](https://zenmux.ai/platform) 重新创建密钥并重新登录。
 
@@ -84,6 +84,8 @@ zenmux · Builder Starter · until Oct 27 · API key …dff9  subscription  5h 0
 | **原生多协议分流** | `anthropic/*` 走 Anthropic Messages（`/api/anthropic/v1/messages`），`openai/*` 走 OpenAI Responses（`/api/v1/responses`），其余对话模型走 Chat Completions（`/api/v1/chat/completions`） |
 | **原生联网搜索透传** | 开启 `searches: true`，Claude Code 与 Codex 的原生 `web_search` 请求直接透传至 ZenMux 上游 |
 | **精准 403 状态区分** | 区分 ZenMux 的 `403 access_denied`（Key 失效，标记账号需重登）与 `403 safety_check_failed`（内容安全拦截，保持账号在线） |
+| **订阅套餐并发上限** | `auth.maxConcurrency: 2`：每个 zenmux 账号同时最多 2 个请求在飞，落在 Builder Plan 的 10–15 RPM 预算内，少撞 429；你在 provider 上自己设的上限优先于它 |
+| **出口域名白名单** | 转发前校验请求 URL：只放行 `https://zenmux.ai` 且路径在 `/api/` 之下，API key 不会被带到别的主机 |
 
 ---
 
@@ -107,6 +109,7 @@ zenmux · Builder Starter · until Oct 27 · API key …dff9  subscription  5h 0
 | 用量卡片提示 `Management API key (sk-mgmt-…) not set` | 登录时未填管理密钥。前往 [ZenMux Management](https://zenmux.ai/platform/management) 创建 `sk-mgmt-…`，重新运行 `magpie plugin login zenmux` 填入即可 |
 | 调用模型提示 `sk-mgmt-… is a Management API key` | 把管理密钥填进了推理 API Key 输入框。管理密钥只能填在第一步提示中，API Key 输入框需填 `sk-subs-…` 或 `sk-payg-…` |
 | 调用模型返回 `403 access_denied`，并提示 `legacy ZenMux API key` / `API key upgrade` | 你的密钥是 2026-11-10 之前创建的旧格式，ZenMux 已停用。前往 [zenmux.ai/platform](https://zenmux.ai/platform) 重新创建密钥（订阅 `sk-subs-…`、按量 `sk-payg-…`、管理 `sk-mgmt-…`），再 `magpie plugin login zenmux` 重新登录 |
+| 调用模型报 `refusing to send an API key to an unexpected endpoint` | 请求的 URL 不在 `https://zenmux.ai/api/` 之下，插件拒绝把 key 发出去。通常是 Magpie 侧的 provider 配置被改过，检查 `magpie provider key zenmux` |
 | 订阅号里找不到某个模型（如 `claude-opus-4.5`） | 该模型不在你当前的订阅套餐（如 Starter）范围内。可升级套餐，或同时添加一个按量 Key（`sk-payg-…`）由其承接 |
 
 ---

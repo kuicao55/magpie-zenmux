@@ -487,6 +487,20 @@ function extractPlanModelSet(plansData, tier) {
 
 // ---- Request URL & header normalization -------------------------------------
 
+// The key must never leave zenmux.ai. Magpie builds the request URL from the
+// provider config, so the host is ours — but check it anyway, because a key
+// that reaches another host cannot be taken back.
+function assertZenMuxEndpoint(rawUrl) {
+  const u = new URL(String(rawUrl))
+  if (u.origin !== ORIGIN || u.username || u.password) {
+    throw new Error("ZenMux: refusing to send an API key to an unexpected endpoint")
+  }
+  if (!u.pathname.startsWith("/api/")) {
+    throw new Error(`ZenMux: refusing to send an API key to ${u.pathname}`)
+  }
+  return u
+}
+
 function rewriteRequestUrl(rawUrl) {
   const u = new URL(String(rawUrl))
   if (u.pathname === "/api/v1/messages" || u.pathname === "/v1/messages") {
@@ -568,6 +582,10 @@ export const ZenMuxAuthPlugin = async (input = {}) => {
     auth: {
       provider: ID,
       icon: ICON,
+      // ZenMux's Builder Plan runs on a 10-15 RPM budget. Two requests in
+      // flight per account keeps a burst inside it instead of bouncing off
+      // the rate limit; a limit the user sets on the provider wins over this.
+      maxConcurrency: 2,
       methods: [
         {
           type: "api",
@@ -603,6 +621,7 @@ export const ZenMuxAuthPlugin = async (input = {}) => {
 
             const rawUrl = typeof reqInput === "string" || reqInput instanceof URL ? String(reqInput) : reqInput.url
             const { url, protocol } = rewriteRequestUrl(rawUrl)
+            assertZenMuxEndpoint(url)
             const headers = new Headers(init?.headers)
 
             if (protocol === "anthropic") {
@@ -749,6 +768,7 @@ export const ZenMuxAuthPlugin = async (input = {}) => {
 }
 
 export const _internal = {
+  assertZenMuxEndpoint,
   compactFlows,
   configModelOf,
   extractPlanModelSet,
